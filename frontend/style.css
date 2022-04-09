@@ -271,6 +271,17 @@ p {
 .footer {
     height: 18rem;
     background: var(--grey-1);
+    color: #ccc;
+}
+
+.footer__inner {
+    width: 100%;
+    padding: 3rem;
+}
+
+.footer__item {
+    width: fit-content;
+    margin: 1rem auto;
 }
 
 
