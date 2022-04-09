@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ludum Dare Tools</title>
+        <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Raleway:600,600italic,800,800italic|Roboto:300,300italic,700,700italic&amp;display=swap" type="text/css">
+        <link rel="stylesheet" href="style.css?v=1.0.2">
+        <!--script src="showdown.min.js"></script-->
+    </head>
+    <body>
+        
+        <div class="container">
+            
+            <div class="header">
+                <div class="header__inner">
+                    <a class="logo" href="https://ldjam.com/"></a>
+                    
+                    <div id="login" style="display: none; ">
+                        <button onclick="openLoginDialog.apply(this)"></button>
+                    </div>
+                    
+                    <div id="logout" style="display: none; ">
+                        <button onclick="logout.apply(this)"></button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="navigation">
+                
+                <button id="previous-ld-button" onclick="previousLD()"><div>Previous LD</div></button>
+                <button id="next-ld-button" onclick="nextLD()"><div>Next LD</div></button>
+                
+            </div>
+            
+            <div class="content">
+                
+                <div class="content__inner">
+                    
+                    <div class="title">
+                        <div class="flag"></div>
+                        <h1>Your ratings at Ludum Dare <span class="ld"></span></h1>
+                        <p>This is a list of all game <b>you have rated</b> at Ludum Dare <span class="ld"></span>.</p>
+                    </div>
+                    
+                    <div class="separator"></div>
+                    
+                    <div class="event">
+                        <div class="event__data" id="data">
+                            <div class="loading">
+                                The first time may take a little longer.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+            
+            <div class="footer">
+                <div class="footer__inner">
+                    
+                </div>
+            </div>
+        </div>
+        
+        <div id="login-dialog">
+            <div class="login__background" onclick="cancel()">
+                
+            </div>
+            <div class="login__box-wrapper">
+                <div class="login__box">
+                    <div class="login__box-header">
+                        Log in
+                    </div>
+                    <div class="login__box-body">
+                        <div class="login__box-input-container">
+                            <input type="text" id="username" placeholder="Name, account name, or e-mail">
+                        </div>
+                        <div class="login__box-input-container">
+                            <input type="password" id="password" placeholder="Password">
+                        </div>
+                    </div>
+                    <div class="login__box-footer">
+                        <button onclick="login.apply(this)">Log In</button>
+                        <button onclick="cancel.apply(this)" style="border: none; ">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <script src="script.js?v=1.0.2"></script>
+        
+    </body>
+</html>

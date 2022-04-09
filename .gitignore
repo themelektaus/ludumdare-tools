@@ -1,0 +1,7 @@
+/.vs/
+/bin/
+/build/
+/data/
+/obj/
+/Properties/PublishProfiles/
+*.csproj.user
