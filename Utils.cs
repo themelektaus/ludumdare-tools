@@ -1,22 +1,17 @@
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 using System.Dynamic;
-using System.IO;
-using System.Linq;
 using System.Net.Http;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
+
+namespace LudumDareTools;
 
 public static class Utils
 {
     public const string API_BASE_URL = "https://api.ldjam.com/vx/";
     public const string TOKEN_PREFIX = "SIDS=";
 
-    public static List<Node> nodes;
-    public static List<User> users;
+    public readonly static LudumDareNodeCollection<Game> games = new();
+    public readonly static LudumDareNodeCollection<User> users = new();
 
     static JsonSerializerOptions jsonOptions;
 
@@ -33,15 +28,15 @@ public static class Utils
         return jsonOptions;
     }
 
-    static JsonSerializerSettings jsonSettings;
+    static JsonSettings jsonSettings;
 
-    public static JsonSerializerSettings GetJsonSettings()
+    public static JsonSettings GetJsonSettings()
     {
         if (jsonSettings == null)
         {
-            jsonSettings = new JsonSerializerSettings
+            jsonSettings = new JsonSettings
             {
-                Formatting = Formatting.Indented
+                Formatting = JsonFormatting.Indented
             };
         }
         return jsonSettings;
@@ -62,7 +57,7 @@ public static class Utils
         try
         {
             string json = await @this.GetStringAsync(requestUri);
-            var result = JsonConvert.DeserializeObject<ExpandoObject>(json, GetJsonSettings());
+            var result = Json.DeserializeObject<ExpandoObject>(json, GetJsonSettings());
             return (result, null);
         }
         catch (HttpRequestException ex)
@@ -101,61 +96,28 @@ public static class Utils
 
     public static T As<T>(this object @this)
     {
-        var json = JsonConvert.SerializeObject(@this, GetJsonSettings());
-        return JsonConvert.DeserializeObject<T>(json, GetJsonSettings());
+        var json = Json.SerializeObject(@this, GetJsonSettings());
+        return Json.DeserializeObject<T>(json, GetJsonSettings());
     }
 
-    public static void Load<T>(ref List<T> list, string path)
+    public static string ReadAllText(this FileInfo @this)
     {
-        if (list is not null)
-            return;
-
-        list = new();
-
-        path = Path.Combine("data", path);
-
-        Directory.CreateDirectory(path);
-
-        foreach (var file in Directory.EnumerateFiles(path, "*.json"))
-        {
-            var json = File.ReadAllText(file);
-            var item = JsonConvert.DeserializeObject<T>(json, GetJsonSettings());
-            list.Add(item);
-        }
+        return File.ReadAllText(@this.FullName);
     }
 
-    public static void Save<T>(List<T> list, string path, T item, object name)
+    public static void WriteAllText(this FileInfo @this, string contents)
     {
-        path = Path.Combine("data", path);
-
-        Directory.CreateDirectory(path);
-
-        var json = JsonConvert.SerializeObject(item, GetJsonSettings());
-        File.WriteAllText(Path.Combine(path, $"{name}.json"), json);
-
-        list.Add(item);
+        File.WriteAllText(@this.FullName, contents);
     }
 
-    public static void Delete<T>(List<T> list, string path, Predicate<T> predicate, object name)
+    public static async Task<long> GetLD(int number)
     {
-        list.RemoveAll(predicate);
-
-        path = Path.Combine("data", path, $"{name}.json");
-        if (File.Exists(path))
-            File.Delete(path);
+        using var httpClient = CreateHttpClient();
+        var (data, _) = await httpClient.Get($"node2/walk/1/events/ludum-dare/{number}");
+        return data is null ? 0 : data.node_id;
     }
 
-    public static string ToMD5(this string @this)
-    {
-        using var md5 = MD5.Create();
-        var hash = md5.ComputeHash(Encoding.UTF8.GetBytes(@this));
-        var result = new StringBuilder();
-        for (int i = 0; i < hash.Length; i++)
-            result.Append(hash[i].ToString("X2"));
-        return result.ToString().ToLower();
-    }
-
-    public static async Task<List<Node>> GetRatings(int number, string token)
+    public static async Task<List<Game>> GetRatings(int number, string token)
     {
         using var httpClient = CreateHttpClient(token);
 
@@ -172,90 +134,33 @@ public static class Utils
         List<object> dataGrade = data.grade;
         List<Grade> grades = dataGrade.Select(x => x.As<Grade>()).ToList();
 
-        var nodes = new List<Node>();
+        var games = new List<Game>();
 
         foreach (var grade in grades)
         {
-            var node = nodes.FirstOrDefault(x => x.id == grade.id);
-            if (node is null)
+            var game = games.FirstOrDefault(x => x.id == grade.id);
+            if (game is null)
             {
-                node = await GetNode(grade.id, false);
-                nodes.Add(node);
+                game = await Utils.games.Get(grade.id);
+                if (game is null)
+                    continue;
+                games.Add(game);
             }
 
             switch (grade.name)
             {
-                case "grade-01": node.rating.overall = grade.value; break;
-                case "grade-02": node.rating.fun = grade.value; break;
-                case "grade-03": node.rating.innovation = grade.value; break;
-                case "grade-04": node.rating.theme = grade.value; break;
-                case "grade-05": node.rating.graphics = grade.value; break;
-                case "grade-06": node.rating.audio = grade.value; break;
-                case "grade-07": node.rating.humor = grade.value; break;
-                case "grade-08": node.rating.mood = grade.value; break;
+                case "grade-01": game.rating.overall = grade.value; break;
+                case "grade-02": game.rating.fun = grade.value; break;
+                case "grade-03": game.rating.innovation = grade.value; break;
+                case "grade-04": game.rating.theme = grade.value; break;
+                case "grade-05": game.rating.graphics = grade.value; break;
+                case "grade-06": game.rating.audio = grade.value; break;
+                case "grade-07": game.rating.humor = grade.value; break;
+                case "grade-08": game.rating.mood = grade.value; break;
                 default: break;
             }
         }
 
-        return nodes;
-    }
-
-    public static async Task<long> GetLD(int number)
-    {
-        using var httpClient = CreateHttpClient();
-        var (data, _) = await httpClient.Get($"node2/walk/1/events/ludum-dare/{number}");
-        return data is null ? 0 : data.node_id;
-    }
-
-    public static async Task<Node> GetNode(long id, bool force)
-    {
-        Load(ref nodes, "nodes");
-
-        if (nodes.Any(x => x.id == id))
-        {
-            if (force)
-            {
-                nodes.RemoveAll(x => x.id == id);
-                goto ForceSection;
-            }
-
-            var existingNode = nodes.FirstOrDefault(x => x.id == id);
-
-            existingNode.user = await GetUser(existingNode.author);
-
-            return existingNode;
-        }
-
-    ForceSection:
-
-        using var httpClient = CreateHttpClient();
-
-        var data = (await httpClient.Get($"node/get/{id}")).data.node[0];
-
-        var node = (data as object).As<Node>();
-
-        try { node.cover = data.meta.cover; } catch { }
-        
-        Save(nodes, "nodes", node, node.id);
-
-        node.user = await GetUser(node.author);
-
-        return node;
-    }
-
-    public static async Task<User> GetUser(long id)
-    {
-        Load(ref users, "users");
-
-        if (users.Any(x => x.id == id))
-            return users.FirstOrDefault(x => x.id == id);
-
-        using var httpClient = CreateHttpClient();
-
-        var user = ((await httpClient.Get($"node/get/{id}")).data.node[0] as object).As<User>();
-
-        Save(users, "users", user, user.id);
-
-        return user;
+        return games;
     }
 }

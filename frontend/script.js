@@ -43,7 +43,7 @@ function logout()
 {
     const request = new XMLHttpRequest();
     
-    request.open("GET", "/api/logout?token=" + getToken());
+    request.open("POST", "/api/logout");
     
     request.onreadystatechange = function()
     {
@@ -56,8 +56,10 @@ function logout()
         localStorage.removeItem("token");
         location.reload();
     };
-    
-    request.send(null);
+
+    const formData = new FormData();
+    formData.append("token", getToken());
+    request.send(formData);
 }
 
 function getToken()
@@ -128,7 +130,7 @@ for (const ldElement of document.getElementsByClassName("ld"))
 
 const request = new XMLHttpRequest();
 
-request.open("GET", "/api/ld" + getLD() + "/ratings?token=" + getToken());
+request.open("POST", "/api/ld" + getLD() + "/ratings");
 
 request.onreadystatechange = function()
 {
@@ -235,4 +237,6 @@ request.onreadystatechange = function()
     }
 }
 
-request.send(null);
+const formData = new FormData();
+formData.append("token", getToken());
+request.send(formData);

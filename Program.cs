@@ -1,10 +1,9 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.FileProviders;
-using System.IO;
 using System.Net;
 
-using static Utils;
+using static LudumDareTools.Utils;
 
 var builder = WebApplication.CreateBuilder();
 
@@ -25,8 +24,6 @@ app.MapPost("/api/login", async (HttpContext context) =>
     string username = context.Request.Form["username"];
     string password = context.Request.Form["password"];
     
-    string passwordMD5 = password.ToMD5();
-
     using var httpClient = CreateHttpClient();
     var (message, cookies) = await httpClient.Post("user/login", ("login", username), ("pw", password));
 
@@ -40,8 +37,10 @@ app.MapPost("/api/login", async (HttpContext context) =>
     return Results.Text(sids[TOKEN_PREFIX.Length..]);
 });
 
-app.MapGet("/api/logout", async (string token) =>
+app.MapPost("/api/logout", async (HttpContext context) =>
 {
+    string token = context.Request.Form["token"];
+
     using var httpClient = CreateHttpClient(token);
     var (message, _) = await httpClient.Post("user/logout");
 
@@ -51,10 +50,10 @@ app.MapGet("/api/logout", async (string token) =>
     return Results.Text(token);
 });
 
-app.MapGet("/api/ld{number}/ratings", async (HttpContext context, int number) =>
+app.MapPost("/api/ld{number}/ratings", async (HttpContext context, int number) =>
 {
-    string token = context.Request.Query["token"];
-
+    string token = context.Request.Form["token"];
+    
     var ratings = await GetRatings(number, token);
 
     if (ratings is null)
