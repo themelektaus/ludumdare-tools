@@ -43,7 +43,7 @@ public class LudumDareNodeCollection<T> where T : LudumDareNode
     {
         var nodes = Load();
 
-        if (!nodes.Any(x => x.id != id))
+        if (!nodes.Any(x => x.id == id))
             return await RequestAndSave(id);
 
         var existingNode = nodes.FirstOrDefault(x => x.id == id);
