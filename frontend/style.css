@@ -389,6 +389,29 @@ p {
     color: var(--secondary-color);
 }
 
+.entry__user-comments {
+    display: inline-block;
+    font-size: 2rem;
+    position: absolute;
+    right: .5rem;
+    pointer-events: none;
+    margin-top: -3rem;
+}
+
+.entry__user-comments-zero {
+    display: none;
+}
+
+.entry__user-comments-one::after {
+    content: '💬';
+}
+
+.entry__user-comments-more::after {
+    content: '💬💬';
+    letter-spacing: -.75em;
+    margin-right: 1.5rem;
+}
+
 .entry__cover-wrapper {
     display: block;
     width: 100%;

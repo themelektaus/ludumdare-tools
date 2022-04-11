@@ -41,6 +41,9 @@ public class Game : LudumDareNode
     public User user;
 
     [JsonIgnore]
+    public int userComments;
+
+    [JsonIgnore]
     public string static_cover =>
         cover?.Replace("///content", "https://static.jam.vg/content") + ".fit.jpg" ?? "";
 

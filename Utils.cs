@@ -121,7 +121,15 @@ public static class Utils
     {
         using var httpClient = CreateHttpClient(token);
 
+
+
+        // Get Event ID of LD by its number (1-50)
+
         long ld = await GetLD(number);
+
+
+
+        // Get all my grades (ratings)
 
         var (data, ex) = await httpClient.Get($"grade/getallmy/{ld}");
 
@@ -133,6 +141,29 @@ public static class Utils
 
         List<object> dataGrade = data.grade;
         List<Grade> grades = dataGrade.Select(x => x.As<Grade>()).ToList();
+
+
+
+        // Get all my comments af event
+
+        List<Comment> comments = new();
+
+        (data, ex) = await httpClient.Get($"comment/getmylistbyparentnode/{ld}");
+
+        long[] comment_ids = (ex is null && data is not null)
+            ? (data.comment as List<object>).As<long[]>()
+            : Array.Empty<long>();
+
+        if (comment_ids.Length > 0)
+        {
+            (data, ex) = await httpClient.Get($"comment/get/{string.Join('+', comment_ids)}");
+            if (ex is null && data is not null)
+                comments.AddRange((data.comment as List<object>).Select(x => x.As<Comment>()));
+        }
+
+
+
+        // Build result list (games)
 
         var games = new List<Game>();
 
@@ -146,6 +177,8 @@ public static class Utils
                     continue;
                 games.Add(game);
             }
+
+            game.userComments = comments.Count(x => x.node == game.id);
 
             switch (grade.name)
             {

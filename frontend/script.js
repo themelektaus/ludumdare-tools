@@ -193,6 +193,7 @@ request.onreadystatechange = function()
         const cover = item.static_cover || "";
         let title = item.name || "Untitled";
         const type = item.subsubtype || "unknown";
+        const userComments = item.userComments || 0;
         
         if (title.length > 50)
             title = title.substr(0, 50) + "...";
@@ -227,6 +228,13 @@ request.onreadystatechange = function()
         typeElement.classList.add("entry__type-" + type);
         typeElement.innerHTML = type.toUpperCase();
         entryInnerElement.appendChild(typeElement);
+
+        const userCommentsElement = document.createElement("div");
+        userCommentsElement.classList.add("entry__user-comments");
+        userCommentsElement.classList.add("entry__user-comments-" + (
+            userComments == 0 ? "zero" : (userComments == 1 ? "one" : "more")
+        ));
+        entryInnerElement.appendChild(userCommentsElement);
         
         //const bodyElement = document.createElement("div");
         //bodyElement.classList.add("entry__body");
