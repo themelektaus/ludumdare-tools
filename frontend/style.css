@@ -177,6 +177,7 @@ p {
     padding: 0 .5rem;
     transition: var(--transition-time);
     cursor: pointer;
+    max-width: calc(100% - 7rem);
 }
 
 .logo:hover {
@@ -226,7 +227,7 @@ p {
 
 .navigation {
     max-width: 82rem;
-    margin: 10.55rem auto 0;
+    margin: 7.6rem auto 0;
     padding: 0 21.7rem 0 1rem;
 }
 
@@ -287,7 +288,7 @@ p {
 
 .content {
     max-width: 82rem;
-    min-height: calc(100vh - 30.9rem);
+    min-height: calc(100vh - 27.95rem);
     margin: 0 auto;
     padding: .5rem 22.7rem 10rem 0;
 }
@@ -331,7 +332,6 @@ p {
 
 .entry__inner {
     width: 100%;
-    padding: .5rem;
 }
 
 .entry__title {
@@ -434,12 +434,12 @@ p {
 .ratings {
     display: flex;
     flex-wrap: wrap;
-    padding: 2rem 0 0;
+    padding: 1.25rem .5rem .5rem;
     gap: .5rem;
 }
 
 .rating {
-    width: 6.2rem;
+    width: 23%;
     flex-grow: 1;
     margin: 0 0 .7rem;
 }
@@ -638,7 +638,7 @@ p {
     color: var(--grey-1);
     background: var(--grey-3);
     box-shadow: 0 0 4px rgba(31, 36, 41, .5);
-    max-width: 40em;
+    max-width: min(90vw, 40em);
     font-size: 1.2em;
     pointer-events: all;
 }
@@ -664,8 +664,8 @@ p {
     background: var(--grey-4);
     border: 0;
     padding: 0.5em;
-    max-width: 20em;
-    width: 20em;
+    max-width: calc(100% - 1em);
+    width: 19em;
     font-size: 1em;
     outline: none;
     opacity: .8;
@@ -698,4 +698,32 @@ p {
 .login__box-footer button:hover {
     background: var(--primary-color);
     border-color: var(--primary-color);
+}
+
+@media screen and (max-width: 960px) {
+    
+    .navigation {
+        padding-left: .5rem;
+        padding-right: .5rem;
+    }
+    
+    .content {
+        padding-right: 0;
+    }
+    
+    .content__inner {
+        margin: auto 0;
+    }
+    
+    .rating {
+        width: 45%;
+    }
+}
+
+@media screen and (max-width: 760px) {
+    
+    .entry {
+        width: inherit;
+    }
+    
 }
