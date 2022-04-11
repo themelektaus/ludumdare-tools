@@ -1,6 +1,31 @@
+const timeouts = { };
+
 function openLoginDialog()
 {
     document.getElementById("login-dialog").style.display = "block";
+    document.getElementById("username").focus();
+}
+
+function onLoginKeyDown()
+{
+    if (arguments[0].keyCode !== 13)
+        return false;
+    
+    login.apply(this);
+    return true;
+}
+
+function shakeDialogBox()
+{
+    const loginBox = document.querySelector(".login__box");
+    if (timeouts[loginBox])
+    {
+        clearTimeout(timeouts[loginBox]);
+        timeouts[loginBox] = null;
+    }
+    loginBox.classList.remove("shake");
+    setTimeout(() => loginBox.classList.add("shake"));
+    timeouts[loginBox] = setTimeout(() => loginBox.classList.remove("shake"), 500);
 }
 
 function login()
@@ -14,17 +39,16 @@ function login()
     
     request.onreadystatechange = function()
     {
-        if (request.readyState !== 4)
-            return;
-            
-        if (request.status !== 200)
+        if (request.readyState != 4)
             return;
         
-        const token = request.responseText;
-        if (!token)
-            return;
+        if (request.status != 200 || !request.responseText)
+        {
+            shakeDialogBox();
+            return
+        }
         
-        localStorage.setItem("token", token);
+        localStorage.setItem("token", request.responseText);
         location.reload();
     };
     

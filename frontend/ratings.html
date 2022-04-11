@@ -80,10 +80,14 @@
                     </div>
                     <div class="login__box-body">
                         <div class="login__box-input-container">
-                            <input type="text" id="username" placeholder="Name, account name, or e-mail">
+                            <input type="text" id="username"
+                                   placeholder="Name, account name, or e-mail"
+                                   onkeydown="onLoginKeyDown.apply(this, arguments)">
                         </div>
                         <div class="login__box-input-container">
-                            <input type="password" id="password" placeholder="Password">
+                            <input type="password" id="password"
+                                   placeholder="Password"
+                                   onkeydown="onLoginKeyDown.apply(this, arguments)">
                         </div>
                     </div>
                     <div class="login__box-footer">
