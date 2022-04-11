@@ -120,6 +120,7 @@ const grades = [
 ];
 
 const keywords = {
+  "-1"  : "Opt-out",
     0   : "Unrated",
     1   : "Poor",
     1.5 : "Less good",
@@ -237,12 +238,18 @@ request.onreadystatechange = function()
         
         if (item.id)
         {
-            for (const grade of grades)
+            for (const i in grades)
             {
-                let value = item.rating[grade.toLowerCase()];
-                if (!value)
-                    value = 0;
-                
+                let value = -1;
+
+                const grade = grades[i];
+                if (!item.opt_outs[i])
+                {
+                    value = item.rating[grade.toLowerCase()]
+                    if (!value)
+                        value = 0;
+                }
+
                 const ratingElement = document.createElement("div");
                 ratingElement.classList.add("rating");
                 ratingElement.setAttribute("data-keyword", keywords[value].toLowerCase());

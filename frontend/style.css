@@ -36,7 +36,8 @@
     --primary-color: #e53;
     --secondary-color: #F79122;
     
-    --keyword-color__unrated:    rgb(181, 181, 181);
+    --keyword-color__opt-out:    rgb(181, 181, 181);
+    --keyword-color__unrated:    rgb(17, 17, 17);
     --keyword-color__poor:       rgb(192, 148, 79);
     --keyword-color__less-good:  rgb(197, 96, 96);
     --keyword-color__fair:       rgb(207, 93, 160);
@@ -500,11 +501,24 @@ p {
     background-color: var(--grey-2);
 }
 
+[data-keyword='opt-out'] {
+    color: var(--keyword-color__opt-out);
+    opacity: 0.6;
+}
+[data-keyword='opt-out'] .bar,
+[data-keyword='opt-out'] .value {
+    visibility: hidden;
+}
+
 [data-keyword='unrated'] {
     color: var(--keyword-color__unrated);
 }
-[data-keyword='unrated'] .bar {
+[data-keyword='unrated'] .bar,
+[data-keyword='unrated'] .value {
     visibility: hidden;
+}
+[data-keyword='unrated'] .rating__value {
+    outline: 2px solid black;
 }
 
 [data-keyword='poor'] .value {
