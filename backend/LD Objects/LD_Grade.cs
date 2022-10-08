@@ -1,6 +1,6 @@
 ﻿namespace LudumDareTools;
 
-public struct Grade
+public struct LD_Grade
 {
     public long id;
     public string name;

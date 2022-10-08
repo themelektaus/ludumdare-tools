@@ -1,6 +1,6 @@
 ﻿namespace LudumDareTools;
 
-public struct Comment
+public struct LD_Comment
 {
     public long id;
     public long parent;

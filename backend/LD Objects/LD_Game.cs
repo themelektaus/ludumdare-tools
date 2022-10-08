@@ -1,6 +1,6 @@
 ﻿namespace LudumDareTools;
 
-public class Game : LudumDareNode
+public class LD_Game : LD_Node
 {
     public struct Meta
     {
@@ -35,17 +35,30 @@ public class Game : LudumDareNode
     public bool[] opt_outs = new bool[8];
 
     [JsonIgnore]
-    public Rating rating;
+    public LD_Rating rating;
 
     [JsonIgnore]
-    public User user;
+    public float averageRating =>
+        rating.GetTotal() / opt_outs.Where(x => !x).Count();
+
+    [JsonIgnore]
+    public float rateProgress =>
+        rating.GetRatedCount(opt_outs) / opt_outs.Where(x => !x).Count();
+
+    [JsonIgnore]
+    public LD_User user;
 
     [JsonIgnore]
     public int userComments;
 
     [JsonIgnore]
     public string static_cover =>
-        cover?.Replace("///content", "https://static.jam.vg/content") + ".fit.jpg" ?? "";
+        cover is null
+        ? null
+        : cover.Replace("///content", "https://static.jam.vg/content") + ".jpg" ?? "";
+
+    [JsonIgnore]
+    public string thumbnail_url => $"/api/thumbnail/{id}";
 
     public override void BeforeSave(dynamic data)
     {
@@ -61,8 +74,4 @@ public class Game : LudumDareNode
         opt_outs[7] = meta.grade08Out == "1";
     }
 
-    public override async Task BeforeReturn()
-    {
-        user = await Utils.users.Get(author);
-    }
 }
