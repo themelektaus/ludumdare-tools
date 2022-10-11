@@ -49,6 +49,7 @@ body {
     background: var(--grey-2);
     color: #3d4752;
     font-size: 1.1em;
+    padding-top: 7.6rem;
 }
 
 a {
@@ -116,7 +117,6 @@ p {
     background-position: center;
     width: 20rem;
     height: 5rem;
-    margin: 1rem auto 0;
     color: var(--grey-3);
 }
 
@@ -209,7 +209,7 @@ p {
 
 .navigation {
     max-width: 82rem;
-    margin: 7.6rem auto 0;
+    margin: 0 auto;
     padding: 0 21.7rem 0 1rem;
     display: flex;
     gap: .5rem;
@@ -289,7 +289,6 @@ input:focus {
 button.more {
     font-size: 18px;
     text-transform: uppercase;
-    margin: 1rem auto 0;
     padding: .05rem 1.1rem 0 1.1rem;
 }
 
@@ -682,6 +681,13 @@ button.more:hover {
 [data-keyword='perfect'] .bar {
     background: var(--keyword-color__perfect);
     transform: scaleX(1);
+}
+
+.bottom {
+    height: 7rem;
+    display: flex;
+    justify-content: center;
+    margin: 1rem 0 0;
 }
 
 .dialog {

@@ -180,9 +180,9 @@ class DOM
         return DOM.get("#logout")
     }
     
-    static get eventElement()
+    static get bottomElement()
     {
-        return DOM.get(".event")
+        return DOM.get(".bottom")
     }
     
     static get dataElement()
@@ -232,7 +232,7 @@ class DOM
         return DOM.getAll(`input[data-option="orderCategory"]`)
     }
     
-    static wheelEvent = e =>
+    static noScrollEvent = e =>
     {
         if (e.target.classList.contains("dialog__background"))
             e.preventDefault()
@@ -246,12 +246,12 @@ class DOM
     
     static disableScroll() 
     {
-        DOM.body.addEventListener("wheel", DOM.wheelEvent, { passive: false })
+        DOM.body.addEventListener("wheel", DOM.noScrollEvent, { passive: false })
     }
     
     static enableScroll()
     {
-        DOM.body.removeEventListener("wheel", DOM.wheelEvent)
+        DOM.body.removeEventListener("wheel", DOM.noScrollEvent)
     }
     
     static openLoginDialog()
@@ -353,6 +353,13 @@ class App
             throw new Error
         
         this.running = true
+        
+        window.addEventListener("scroll", () =>
+        {
+            if (DOM.moreButton.parentNode)
+                if (DOM.body.offsetHeight - window.innerHeight - window.scrollY < 400)
+                    DOM.moreButton.click()
+        })
         
         DOM.loading.remove()
         
@@ -478,7 +485,7 @@ class App
             }
         })
         
-        this.fetchGames()
+        DOM.moreButton.click()
     }
     
     fetchGames()
@@ -490,7 +497,7 @@ class App
         
         DOM.moreButton.remove()
         
-        DOM.eventElement.appendChild(DOM.loading)
+        DOM.bottomElement.appendChild(DOM.loading)
         
         DOM.previousLdButton.style.display = Storage.ld == MIN_LD_NUMBER ? "none" : "block"
         DOM.nextLdButton.style.display = Storage.ld == MAX_LD_NUMBER ? "none" : "block"
@@ -686,7 +693,7 @@ class App
             }
             
             if (games.length == 20)
-                DOM.eventElement.appendChild(DOM.moreButton)
+                DOM.bottomElement.appendChild(DOM.moreButton)
             
             this.busy = false
         })
