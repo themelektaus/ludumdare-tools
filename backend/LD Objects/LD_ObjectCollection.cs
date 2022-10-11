@@ -69,6 +69,11 @@ public abstract class LD_ObjectCollection<T> where T : LD_Object
         return null;
     }
 
+    public async Task<T> Get(long id)
+    {
+        return (await Get(new List<long>() { id })).FirstOrDefault();
+    }
+
     public async Task<List<T>> Get(IEnumerable<long> ids)
     {
         var items = Load();

@@ -35,13 +35,15 @@ app.UseStaticFiles(new StaticFileOptions
 
 app.MapPost("/api/login", async (HttpContext context) =>
 {
-    string username = context.Request.Form["username"];
-    string password = context.Request.Form["password"];
+    string username = context.GetFormString("username");
+    string password = context.GetFormString("password");
 
-    using var httpClient = Utils.CreateHttpClient();
-    var (message, cookies) = await httpClient.Post("user/login", ("login", username), ("pw", password));
+    using var httpClient = context.CreateHttpClient();
+    var response = await httpClient.Post("user/login", ("login", username), ("pw", password));
 
-    if (message.StatusCode != HttpStatusCode.OK || cookies.Length == 0)
+    var cookies = response.GetCookies();
+
+    if (response.StatusCode != HttpStatusCode.OK || cookies.Count == 0)
         return Results.Unauthorized();
 
     var sids = cookies[0].Split(";")[0].Trim();
@@ -57,15 +59,13 @@ app.MapPost("/api/login", async (HttpContext context) =>
 
 app.MapPost("/api/logout", async (HttpContext context) =>
 {
-    string token = context.Request.Form["token"];
+    using var httpClient = context.CreateHttpClient();
+    var response = await httpClient.Post("user/logout");
 
-    using var httpClient = Utils.CreateHttpClient(token);
-    var (message, _) = await httpClient.Post("user/logout");
+    if (response.StatusCode != HttpStatusCode.OK)
+        return Results.StatusCode((int) response.StatusCode);
 
-    if (message.StatusCode != HttpStatusCode.OK)
-        return Results.StatusCode((int) message.StatusCode);
-
-    return Results.Text(token);
+    return Results.Ok();
 });
 
 #endregion
@@ -74,61 +74,59 @@ app.MapPost("/api/logout", async (HttpContext context) =>
 
 app.MapPost("/api/ld{number}", async (HttpContext context, int number) =>
 {
-    var runtimeData = App.instance;
-
-    var ld = await runtimeData.GetLD(number);
-    if (ld is null)
+    var ludumDare = await Runtime.instance.GetLudumDare(number);
+    if (ludumDare is null)
         return Results.NoContent();
 
-    var @event = await runtimeData.GetEvent(ld.id);
+    var @event = await ludumDare.GetEvent();
     if (@event is null)
         return Results.NoContent();
 
-    var games = await runtimeData.GetGames(@event);
+    var games = await @event.GetGames();
     if (games is null)
         return Results.NoContent();
 
-    var users = await runtimeData.GetUsers(games);
+    var users = await games.GetUsers();
     if (users is null)
         return Results.NoContent();
 
-    runtimeData.ApplyUsers(games, users);
+    games.FillUsers(users);
 
-    foreach (var game in games)
+    games.ClearGrades();
+    games.ClearComments();
+
+    users.ClearSettings();
+
+    LD_User user = null;
+    LD_User.Settings settings = new();
+
+    user = await context.GetUser();
+    if (user is not null)
     {
-        game.rating = new();
-        game.userComments = 0;
-    }
+        user.LoadSettings();
+        settings = user.settings;
 
-    string token = context.Request.Form?["token"];
-    if (!string.IsNullOrEmpty(token))
-    {
-        var myGrades = await ld.GetMyGrades(token);
-        var myComments = await ld.GetMyComments(token);
-        runtimeData.ApplyGrades(games, myGrades);
-        runtimeData.ApplyComments(games, myComments);
+        var myGrades = await context.GetMyGradesOf(ludumDare);
+        var myComments = await context.GetMyCommentsOf(ludumDare);
+        games.FillGrades(myGrades);
+        games.FillComments(myComments);
     }
-
-    bool filterJam = context.Request.Form?["filterJam"].FirstOrDefault() == "true";
-    bool filterCompo = context.Request.Form?["filterCompo"].FirstOrDefault() == "true";
-    bool filterRated = context.Request.Form?["filterRated"].FirstOrDefault() == "true";
-    bool filterUnrated = context.Request.Form?["filterUnrated"].FirstOrDefault() == "true";
 
     IEnumerable<LD_Game> result = games;
 
-    if (!filterJam)
+    if (!settings.options.filterJam)
         result = result.Where(x => x.subsubtype != "jam");
 
-    if (!filterCompo)
+    if (!settings.options.filterCompo)
         result = result.Where(x => x.subsubtype != "compo");
 
-    if (!filterRated)
+    if (!settings.options.filterRated)
         result = result.Where(x => x.rating.GetTotal() == 0);
 
-    if (!filterUnrated)
+    if (!settings.options.filterUnrated)
         result = result.Where(x => x.rating.GetTotal() != 0);
 
-    string search = context.Request.Query["search"].FirstOrDefault() ?? "";
+    var search = context.GetFormString("search");
 
     if (!string.IsNullOrWhiteSpace(search))
     {
@@ -171,9 +169,10 @@ app.MapPost("/api/ld{number}", async (HttpContext context, int number) =>
         });
     }
 
-    string orderCategory = context.Request.Form?["orderCategory"].FirstOrDefault();
+    if (settings.options.filterOnlyFavorites)
+        result = result.Where(x => settings.favoriteGameIds.Contains(x.id));
 
-    switch (orderCategory)
+    switch (settings.options.orderCategory)
     {
         case "smart":
             result = result.OrderByDescending(x => x.magic.smart);
@@ -216,12 +215,16 @@ app.MapPost("/api/ld{number}", async (HttpContext context, int number) =>
             break;
     }
 
-    _ = int.TryParse(context.Request.Query["page"].FirstOrDefault(), out int page);
+    _ = int.TryParse(context.Request.Query["page"], out int page);
 
-    result = result.Skip(page * 20).Take(20).ToList();
+    result = result
+        .Skip(page * Constants.LD_PAGE_CAPACITY)
+        .Take(Constants.LD_PAGE_CAPACITY)
+        .ToList();
 
     return Results.Json(new
     {
+        user,
         rateProgress = games.Sum(x => x.rateProgress),
         games = result.ToList()
     }, Utils.GetJsonOptions());
@@ -233,8 +236,7 @@ app.MapPost("/api/ld{number}", async (HttpContext context, int number) =>
 
 app.MapPost("/api/rate", async (HttpContext context) =>
 {
-    string token = context.Request.Form?["token"];
-    var name = context.Request.Form?["name"].FirstOrDefault();
+    var name = context.GetFormString("name");
 
     switch (name)
     {
@@ -250,22 +252,77 @@ app.MapPost("/api/rate", async (HttpContext context) =>
 
     var grade = new LD_Grade
     {
-        id = long.Parse(context.Request.Form?["id"].FirstOrDefault()),
+        id = context.GetFormLong("id"),
         name = name,
-        value = float.Parse(context.Request.Form?["value"].FirstOrDefault())
+        value = context.GetFormFloat("value")
     };
 
     if (grade.value == 0)
-        await App.instance.RemoveGrade(token, grade);
-    else
-        await App.instance.AddGrade(token, grade);
+    {
+        await context.RemoveGrade(grade);
+        return;
+    }
+
+    await context.AddGrade(grade);
 });
+
+#endregion
+
+#region POST /api/options/get
+
+app.MapPost("/api/options/get", async (HttpContext context) =>
+{
+    var options = await context.GetSettings(x => x.options);
+    return Results.Json(options, Utils.GetJsonOptions());
+});
+
+#endregion
+
+#region POST /api/options/set
+
+app.MapPost("/api/options/set", async (HttpContext context) =>
+{
+    return await context.ModifySettings(settings =>
+    {
+        var o = settings.options;
+        o.filterOnlyFavorites = context.GetFormBoolean("filterOnlyFavorites");
+        o.filterJam = context.GetFormBoolean("filterJam");
+        o.filterCompo = context.GetFormBoolean("filterCompo");
+        o.filterRated = context.GetFormBoolean("filterRated");
+        o.filterUnrated = context.GetFormBoolean("filterUnrated");
+        o.orderCategory = context.GetFormString("orderCategory");
+    });
+});
+
+#endregion
+
+#region POST /api/favorite/add
+
+app.MapPost("/api/favorite/add", async (HttpContext context) =>
+{
+    await context.ModifyFavoriteGames((favoriteGameIds, gameId) =>
+    {
+        if (!favoriteGameIds.Contains(gameId))
+            favoriteGameIds.Add(gameId);
+    });
+});
+
+#endregion
+
+#region POST /api/favorite/remove
+
+app.MapPost("/api/favorite/remove", async (HttpContext context) =>
+    await context.ModifyFavoriteGames((favoriteGameIds, gameId) =>
+    {
+        favoriteGameIds.RemoveAll(x => x == gameId);
+    })
+);
 
 #endregion
 
 #region GET /api/thumbnail/{gameId}
 
-app.MapGet("/api/thumbnail/{gameId}", async (int gameId) =>
+app.MapGet("/api/thumbnail/{gameId}", async (HttpContext context, int gameId) =>
 {
     var path = Path.Combine("data", "thumbnails");
     Directory.CreateDirectory(path);
@@ -273,17 +330,17 @@ app.MapGet("/api/thumbnail/{gameId}", async (int gameId) =>
     var file = new FileInfo(Path.Combine(path, $"{gameId}.jpg"));
     if (!file.Exists)
     {
-        var game = await App.instance.GetGame(gameId);
+        var game = await Cache.games.Get(gameId);
         if (game?.static_cover is not null)
         {
-            using var httpClient = Utils.CreateHttpClient();
+            using var httpClient = context.CreateHttpClient();
             var response = await httpClient.GetAsync(game.static_cover);
 
             using var stream = response.Content.ReadAsStream();
             using var bitmap = Utils.CreateBitmap(stream, new()
             {
-                maxWidth = 640,
-                maxHeight = 480,
+                maxWidth = Constants.THUMBNAIL_WIDTH,
+                maxHeight = Constants.THUMBNAIL_HEIGHT,
                 crop = true
             });
             using var data = bitmap.Encode(SkiaSharp.SKEncodedImageFormat.Jpeg, 90);
@@ -300,8 +357,4 @@ app.MapGet("/api/thumbnail/{gameId}", async (int gameId) =>
 
 #endregion
 
-var task = app.RunAsync();
-
-App.instance.StartBackgroundTask();
-await task;
-App.instance.StopBackgroundTask();
+await Runtime.instance.Execute(app);

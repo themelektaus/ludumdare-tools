@@ -6,8 +6,8 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
         <title>Ludum Dare Tools</title>
         <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Raleway:600,600italic,800,800italic|Roboto:300,300italic,700,700italic&amp;display=swap" type="text/css">
-        <link rel="stylesheet" href="style.css?v=1.0.7">
-        <script src="app.js?v=1.0.7" defer></script>
+        <link rel="stylesheet" href="style.css?v=1.0.9">
+        <script src="app.js?v=1.0.9" defer></script>
     </head>
     <body>
         <div class="container">
@@ -25,10 +25,10 @@
             </div>
             
             <div class="navigation">
-                <button id="previous-ld-button"><div>Previous LD</div></button>
-                <input id="search" placeholder="Search">
-                <button id="options-button"><div>OPTIONS</div></button>
-                <button id="next-ld-button"><div>Next LD</div></button>
+                <button id="previous-ld-button" style="display: none; "><div>Previous LD</div></button>
+                <input id="search" placeholder="Search" autocomplete="off">
+                <button id="options-button" style="display: none; "><div>OPTIONS</div></button>
+                <button id="next-ld-button" style="display: none; "><div>Next LD</div></button>
             </div>
             
             <div class="content">
@@ -120,6 +120,11 @@
                     </div>
                     <div class="dialog__box-body" style="width: 300px; ">
                         <h3>Filter</h3>
+                        <div class="checkbox__container">
+                            <input class="checkbox__input" type="checkbox" data-option="filterOnlyFavorites" />
+                            <span class="checkbox__checkmark"></span>
+                            <label>Only Favorites</label>
+                        </div>
                         <div style="display: flex; ">
                             <div style="width: 10rem; ">
                                 <div class="checkbox__container">
@@ -205,7 +210,7 @@
                         </div>
                     </div>
                     <div class="dialog__box-footer">
-                        <button style="border: none; ">Close</button>
+                        <button style="border: none; ">Apply</button>
                     </div>
                 </div>
             </div>

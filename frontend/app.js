@@ -18,16 +18,6 @@ class Storage
         localStorage.removeItem("token")
     }
     
-    static get search()
-    {
-        return localStorage.getItem("search") || ""
-    }
-    
-    static set search(value)
-    {
-        localStorage.setItem("search", value)
-    }
-    
     static get ld()
     {
         return +(localStorage.getItem("ld") || MAX_LD_NUMBER)
@@ -38,42 +28,41 @@ class Storage
         localStorage.setItem("ld", value)
     }
     
-    static loadOptions()
+    static get search()
     {
-        const options = { }
-        let savedOptions = { }
-        
-        const optionsJson = localStorage.getItem("options") ?? "{}"
-        try { savedOptions = JSON.parse(optionsJson) } catch { }
-        
-        options.filterJam = savedOptions.filterJam ?? true
-        options.filterCompo = savedOptions.filterCompo ?? true
-        options.filterRated = savedOptions.filterRated ?? true
-        options.filterUnrated = savedOptions.filterUnrated ?? true
-        options.orderSmart = savedOptions.orderSmart ?? true
-        options.orderTop = savedOptions.orderTop ?? false
-        options.orderCategory = savedOptions.orderCategory ?? ""
-        
-        return options
+        return localStorage.getItem("search") || ""
     }
     
-    static saveOptions(options)
+    static set search(value)
     {
-        delete options.orderSmart
-        delete options.orderTop
-        localStorage.setItem("options", JSON.stringify(options))
+        localStorage.setItem("search", value)
     }
-    
-    static getOption(key)
-    {
-        return Storage.loadOptions()[key]
-    }
+}
 
-    static setOption(key, value)
+class UserSettings
+{
+    static getOptions()
     {
-        const options = Storage.loadOptions()
-        options[key] = value
-        Storage.saveOptions(options)
+        return App.post(
+            `/api/options/get`, {
+                token: Storage.token
+            }
+        ).then(x => x.json())
+    }
+    
+    static setOptions(value)
+    {
+        return App.post(
+            `/api/options/set`, {
+                token: Storage.token,
+                filterOnlyFavorites: value.filterOnlyFavorites,
+                filterJam: value.filterJam,
+                filterCompo: value.filterCompo,
+                filterRated: value.filterRated,
+                filterUnrated: value.filterUnrated,
+                orderCategory: value.orderCategory
+            }
+        )
     }
 }
 
@@ -358,7 +347,7 @@ class App
         DOM.dataElement.innerHTML = ""
     }
     
-    run()
+    async run()
     {
         if (this.running)
             throw new Error
@@ -393,7 +382,7 @@ class App
         DOM.logoutButton.addEventListener("click", () => this.logout())
         DOM.logoutButton.style.display = Storage.token ? "block" : "none"
         
-        DOM.searchInput.value = Storage.search
+        DOM.searchInput.value = await Storage.search
         DOM.searchInput.addEventListener("input", () =>
         {
             const x = DOM.searchInput
@@ -414,7 +403,8 @@ class App
         {
             item.addEventListener("click", () =>
             {
-                item.parentNode.classList.remove("visible")
+                if (item.parentNode.id != "options-dialog")
+                    item.parentNode.classList.remove("visible")
             })
         })
         
@@ -429,6 +419,8 @@ class App
             this.fetchGames()
         })
         
+        const options = await UserSettings.getOptions()
+        
         DOM.checkboxes.forEach(item =>
         {
             const option = item.dataset.option
@@ -436,7 +428,7 @@ class App
             
             if (option)
             {
-                const checked = Storage.getOption(option)
+                const checked = options[option]
                 if (option == "orderCategory")
                 {
                     if (checked == category)
@@ -458,7 +450,7 @@ class App
             
             if (option)
             {
-                item.addEventListener("click", () =>
+                item.addEventListener("click", async () =>
                 {
                     if (option == "orderCategory")
                     {
@@ -472,13 +464,15 @@ class App
                         DOM.orderCategoryCheckboxes.forEach(x =>
                         {
                             if (x.checked)
-                                Storage.setOption(option, category)
+                                options[option] = category
                         })
+                        await UserSettings.setOptions(options)
                     }
                     else
                     {
                         input.checked = !input.checked
-                        Storage.setOption(option, input.checked)
+                        options[option] = input.checked
+                        await UserSettings.setOptions(options)
                     }
                 })
             }
@@ -503,14 +497,11 @@ class App
         DOM.getAll(".ld").forEach(x => x.innerHTML = Storage.ld)
         DOM.getAll(".rate-progress").forEach(x => x.innerHTML = "")
         
-        const data = { token: Storage.token }
-        const options = Storage.loadOptions()
-        for (const key in options)
-            data[key] = options[key]
-        
         App.post(
-            `/api/ld${Storage.ld}/?page=${this.page++}&search=${Storage.search}`,
-            data
+            `/api/ld${Storage.ld}/?page=${this.page++}`, {
+                token: Storage.token,
+                search: Storage.search
+            }
         )
         .then(response =>
         {
@@ -534,6 +525,17 @@ class App
                 DOM.infoElement.innerHTML = "⚠ No data found ⚠"
                 DOM.dataElement.appendChild(DOM.infoElement)
                 throw new Error
+            }
+            
+            if (!data.user && Storage.token)
+            {
+                this.logout()
+                return
+            }
+            
+            if (data.user)
+            {
+                DOM.optionsButton.style.display = "";
             }
             
             DOM.getAll(".rate-progress").forEach(x =>
@@ -568,6 +570,7 @@ class App
                     cover: DOM.create("div"),
                     title: DOM.create("div"),
                     type: DOM.create("div"),
+                    favorite: DOM.create("div"),
                     userComments: DOM.create("div"),
                     ratings: DOM.create("div")
                 }
@@ -610,35 +613,62 @@ class App
                 ))
                 elements.inner.appendChild(element)
                 
-                elements.ratings.classList.add("ratings")
-                
-                if (game.id)
+                if (data.user)
                 {
-                    for (const i in App.grades)
+                    element = elements.favorite
+                    element.classList.add("entry__favorite")
+                    if (data.user.settings.favoriteGameIds.includes(game.id))
+                        element.classList.add("entry__favorite-active")
+                    element.addEventListener("click", e =>
                     {
-                        let rating = { id: 0, name: null, value: -1 }
-                        
-                        const grade = App.grades[i]
-                        if (!game.opt_outs[i])
-                            rating = game.rating[grade.toLowerCase()]
-                        
-                        element = DOM.create("div")
-                        element.classList.add("rating")
-                        element.setAttribute("data-id", rating.id)
-                        element.setAttribute("data-name", rating.name)
-                        element.setAttribute("data-keyword", App.keywords[rating.value].toLowerCase())
-                        
-                        let html = ""
-                        html += "<div class=\"rating__grade\">" + grade + "</div>"
-                        html += "<div class=\"rating__value\"><div class=\"value\">" + (rating.value || "&nbsp;") + "</div></div>"
-                        html += "<div class=\"rating__keyword\"><div class=\"bar\"></div><div class=\"text\">" + App.keywords[rating.value] + "</div></div>"
-                        element.innerHTML = html
-                        
-                        elements.ratings.appendChild(element)
-                    }
-                }
+                        e.target.classList.toggle("entry__favorite-active")
+                        if (e.target.classList.contains("entry__favorite-active"))
+                        {
+                            App.post("api/favorite/add", {
+                                token: Storage.token,
+                                gameId: game.id
+                            })
+                        }
+                        else
+                        {
+                            App.post("api/favorite/remove", {
+                                token: Storage.token,
+                                gameId: game.id
+                            })
+                        }
+                    })
+                    elements.inner.appendChild(element)
                 
-                elements.inner.appendChild(elements.ratings)
+                    elements.ratings.classList.add("ratings")
+                    
+                    if (game.id)
+                    {
+                        for (const i in App.grades)
+                        {
+                            let rating = { id: 0, name: null, value: -1 }
+                            
+                            const grade = App.grades[i]
+                            if (!game.opt_outs[i])
+                                rating = game.rating[grade.toLowerCase()]
+                            
+                            element = DOM.create("div")
+                            element.classList.add("rating")
+                            element.setAttribute("data-id", rating.id)
+                            element.setAttribute("data-name", rating.name)
+                            element.setAttribute("data-keyword", App.keywords[rating.value].toLowerCase())
+                            
+                            let html = ""
+                            html += "<div class=\"rating__grade\">" + grade + "</div>"
+                            html += "<div class=\"rating__value\"><div class=\"value\">" + (rating.value || "&nbsp;") + "</div></div>"
+                            html += "<div class=\"rating__keyword\"><div class=\"bar\"></div><div class=\"text\">" + App.keywords[rating.value] + "</div></div>"
+                            element.innerHTML = html
+                            
+                            elements.ratings.appendChild(element)
+                        }
+                    }
+                    
+                    elements.inner.appendChild(elements.ratings)
+                }
             }
             
             if (games.length == 20)

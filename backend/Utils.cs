@@ -36,16 +36,6 @@ public static class Utils
         return jsonSettings;
     }
 
-    public static HttpClient CreateHttpClient(string token = null)
-    {
-        var httpClient = new HttpClient { BaseAddress = new(Constants.API_BASE_URL) };
-
-        if (token is not null)
-            httpClient.DefaultRequestHeaders.Add("Cookie", Constants.TOKEN_PREFIX + token);
-
-        return httpClient;
-    }
-
     public static SKBitmap CreateBitmap(Stream stream, BitmapOptions options)
     {
         using var original = SKBitmap.Decode(stream);

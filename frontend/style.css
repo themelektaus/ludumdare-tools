@@ -415,6 +415,32 @@ button.more:hover {
     color: var(--secondary-color);
 }
 
+.entry__favorite {
+    position: absolute;
+    background: url(star.png) no-repeat #0006 center;
+    background-size: 60%;
+    border-radius: 50%;
+    width: 2.5rem;
+    height: 2.5rem;
+    top: .5rem;
+    left: .5rem;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.entry:hover .entry__favorite {
+    opacity: .6;
+}
+
+.entry__favorite:hover {
+    scale: 1.2;
+}
+
+.entry__favorite-active {
+    opacity: 1 !important;
+    background-color: #0009;
+}
+
 .entry__user-comments {
     display: inline-block;
     font-size: 2rem;
@@ -827,7 +853,6 @@ button.more:hover {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
-  vertical-align: middle;
 }
 
 .checkbox__container label {

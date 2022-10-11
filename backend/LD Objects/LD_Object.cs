@@ -30,7 +30,7 @@ public abstract class LD_Object
     public bool HasExpired()
     {
         var age = DateTime.Now - info.LastWriteTime;
-        return age.TotalHours >= 24;
+        return age.TotalHours >= Constants.LIFETIME_IN_HOURS;
     }
 
     public virtual void BeforeSave(dynamic data)
