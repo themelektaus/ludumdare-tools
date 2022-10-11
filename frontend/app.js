@@ -578,16 +578,22 @@ class App
                 
                 element = elements.entry
                 element.classList.add("entry")
-                element.style.translate = "0 100px"
-                element.style.opacity = 0
-                element.style.transition = "all 220ms"
-                DOM.dataElement.appendChild(element)
-                
-                setTimeout(() =>
+                if (link)
                 {
-                    elements.entry.style.translate = null
-                    elements.entry.style.opacity = null
-                }, i * 60 + 100)
+                    element.style.translate = "0 100px"
+                    element.style.opacity = 0
+                    element.style.transition = "all 220ms"
+                    setTimeout(() =>
+                    {
+                        elements.entry.style.translate = null
+                        elements.entry.style.opacity = null
+                    }, i * 60 + 100)
+                }
+                else
+                {
+                    element.style.visibility = "hidden"
+                }
+                DOM.dataElement.appendChild(element)
                 
                 element = elements.inner
                 element.classList.add("entry__inner")
