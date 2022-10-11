@@ -253,6 +253,7 @@ input:focus {
 
 .navigation input {
     flex: 1;
+    width: 0;
 }
 
 .navigation button + input + button {
@@ -809,7 +810,11 @@ button.more:hover {
 @media screen and (max-width: 760px) {
     
     .entry {
-        width: inherit;
+        width: 100%;
+    }
+    
+    .entry__cover-wrapper {
+        height: 15rem;
     }
     
 }

@@ -550,8 +550,9 @@ class App
             if (games.length % 2 != 0)
                 games.push({})
             
-            for (const game of games)
+            for (const i in games)
             {
+                const game = games[i]
                 const link = game.static_path || ""
                 const thumbnail = game.thumbnail_url || ""
                 
@@ -577,9 +578,16 @@ class App
                 
                 element = elements.entry
                 element.classList.add("entry")
-                if (!link)
-                    element.style.visibility = "hidden"
+                element.style.translate = "0 100px"
+                element.style.opacity = 0
+                element.style.transition = "all 220ms"
                 DOM.dataElement.appendChild(element)
+                
+                setTimeout(() =>
+                {
+                    elements.entry.style.translate = null
+                    elements.entry.style.opacity = null
+                }, i * 60 + 100)
                 
                 element = elements.inner
                 element.classList.add("entry__inner")
