@@ -228,8 +228,9 @@ public static class ExtensionMethods
         var comments = new List<LD_Comment>();
         while (idList.Count > 0)
         {
-            var _ids = string.Join('+', idList.Take(25));
-            idList.RemoveRange(0, Math.Min(idList.Count, 25));
+            var _ids = string.Join('+', idList.Take(Constants.HALF_LIMIT));
+            idList.RemoveRange(0, Math.Min(idList.Count, Constants.HALF_LIMIT));
+
             comments.AddRange(
                 (await httpClient.Get($"comment/get/{_ids}"))
                     .TryGet(x => x.comment as List<object>, new())

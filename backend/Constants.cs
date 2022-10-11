@@ -10,5 +10,6 @@ public static class Constants
     public const int THUMBNAIL_WIDTH = 640;
     public const int THUMBNAIL_HEIGHT = 480;
     public const int LIMIT = 50;
+    public const int HALF_LIMIT = LIMIT / 2;
     public const int LIFETIME_IN_HOURS = 24;
 }
