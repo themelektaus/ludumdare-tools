@@ -15,19 +15,26 @@ public class Runtime
 
         backgroundTaskTokenSource = new();
         _ = RunBackgroundTask(backgroundTaskTokenSource.Token);
-        Console.WriteLine("Background Task started");
+
+        Console.WriteLine($"Version :: {System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}");
+
+        Console.WriteLine("> Background Task started");
 
         await task;
 
         backgroundTaskTokenSource.Cancel();
-        Console.WriteLine("Background Task stopped");
+        Console.WriteLine("> Background Task stopped.");
     }
 
     async Task RunBackgroundTask(CancellationToken cancellationToken)
     {
         while (true)
         {
+#if DEBUG
             await Task.Delay(420_000, cancellationToken);
+#else
+            await Task.Delay(20_000, cancellationToken);
+#endif
             Console.WriteLine("Fetching...");
             try
             {
@@ -42,7 +49,12 @@ public class Runtime
             {
                 Console.WriteLine(ex);
             }
+            Console.WriteLine("Fetching done!");
+#if DEBUG
             await Task.Delay(420_000, cancellationToken);
+#else
+            await Task.Delay(820_000, cancellationToken);
+#endif
         }
     }
 }

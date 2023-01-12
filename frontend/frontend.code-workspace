@@ -1,0 +1,17 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "emeraldwalk.runonsave": {
+            "commands": [
+                {
+                    "match": ".*",
+                    "cmd": "npm run build"
+                }
+            ]
+        }
+    },
+}

@@ -2,6 +2,9 @@
 /bin/
 /build/
 /data/
+/frontend/dist/
 /obj/
 /Properties/PublishProfiles/
 *.csproj.user
+/frontend/node_modules/
+/.backup/

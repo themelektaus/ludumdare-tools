@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 	<PropertyGroup>
 		<TargetFramework>net6.0</TargetFramework>
+		<Version>1.0.0.2</Version>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="Markdig" Version="0.30.4" />
@@ -9,26 +10,18 @@
 	</ItemGroup>
 	<ItemGroup>
 		<Content Remove="build\**\*.*" />
+		<Content Remove="data\**\*.*" />
+		<Content Remove="frontend\**" />
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Remove="build\**\*.*" />
+		<Compile Remove="data\**\*.*" />
+		<Compile Remove="frontend\**" />
 	</ItemGroup>
 	<ItemGroup>
 		<None Remove="build\**\*.*" />
-	</ItemGroup>
-	<ItemGroup>
-		<Content Remove="data\**\*.*" />
-	</ItemGroup>
-	<ItemGroup>
-		<Compile Remove="data\**\*.*" />
-	</ItemGroup>
-	<ItemGroup>
 		<None Remove="data\**\*.*" />
-	</ItemGroup>
-	<ItemGroup>
-		<None Update="frontend\**\*.*">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</None>
+		<None Remove="frontend\**" />
 	</ItemGroup>
 	<ItemGroup>
 		<None Update="nginx.conf">

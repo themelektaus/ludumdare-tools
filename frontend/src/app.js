@@ -1,306 +1,9 @@
-MIN_LD_NUMBER = 45
-MAX_LD_NUMBER = 51
+import Const from "./const"
+import DOM from "./dom"
+import Storage from "./storage"
+import UserSettings from "./user-settings"
 
-class Storage
-{
-    static get token()
-    {
-        return localStorage.getItem("token") || ""
-    }
-    
-    static set token(value)
-    {
-        localStorage.setItem("token", value)
-    }
-    
-    static removeToken()
-    {
-        localStorage.removeItem("token")
-    }
-    
-    static get ld()
-    {
-        return +(localStorage.getItem("ld") || MAX_LD_NUMBER)
-    }
-    
-    static set ld(value)
-    {
-        localStorage.setItem("ld", value)
-    }
-    
-    static get search()
-    {
-        return localStorage.getItem("search") || ""
-    }
-    
-    static set search(value)
-    {
-        localStorage.setItem("search", value)
-    }
-}
-
-class UserSettings
-{
-    static getOptions()
-    {
-        return App.post(
-            `/api/options/get`, {
-                token: Storage.token
-            }
-        ).then(x => x.json())
-    }
-    
-    static setOptions(value)
-    {
-        return App.post(
-            `/api/options/set`, {
-                token: Storage.token,
-                filterOnlyFavorites: value.filterOnlyFavorites,
-                filterJam: value.filterJam,
-                filterCompo: value.filterCompo,
-                filterRated: value.filterRated,
-                filterUnrated: value.filterUnrated,
-                orderCategory: value.orderCategory
-            }
-        )
-    }
-}
-
-class DOM
-{
-    static loading = DOM.get(".loading")
-    static moreButton = DOM.get(".more")
-    
-    static create(tagName)
-    {
-        return document.createElement(tagName)
-    }
-    
-    static get(selectors)
-    {
-        return document.querySelector(selectors)
-    }
-    
-    static getAll(selectors)
-    {
-        return document.querySelectorAll(selectors)
-    }
-    
-    static timeout(key, startCallback, endCallback, ms)
-    {
-        DOM.timeouts ??= { }
-        if (DOM.timeouts[key])
-        {
-            clearTimeout(DOM.timeouts[key])
-            delete DOM.timeouts[key]
-        }
-        const f = () =>
-        {
-            if (startCallback)
-            {
-                endCallback(key)
-                setTimeout(() => startCallback(key))
-            }
-            DOM.timeouts[key] = setTimeout(() =>
-            {
-                if (endCallback(key))
-                    f()
-            }, ms)
-        }
-        f()
-    }
-    
-    static get body()
-    {
-        return document.body
-    }
-    
-    static get dialogBackgrounds()
-    {
-        return DOM.getAll(".dialog__background")
-    }
-    
-    static get loginDialog()
-    {
-        return DOM.get("#login-dialog")
-    }
-    
-    static get usernameInput()
-    {
-        return DOM.get("#username")
-    }
-    
-    static get passwordInput()
-    {
-        return DOM.get("#password")
-    }
-    
-    static get loginDialogButtons()
-    {
-        return DOM.loginDialog.querySelectorAll("button")
-    }
-    
-    static get gameDialog()
-    {
-        return DOM.get("#game-dialog")
-    }
-    
-    static get gameDialogHeader()
-    {
-        return DOM.gameDialog.querySelector(".dialog__box-header")
-    }
-    
-    static get gameDialogBody()
-    {
-        return DOM.gameDialog.querySelector(".dialog__box-body")
-    }
-    
-    static get gameDialogButtons()
-    {
-        return DOM.gameDialog.querySelectorAll("button")
-    }
-    
-    static get optionsDialog()
-    {
-        return DOM.get("#options-dialog")
-    }
-    
-    static get optionsDialogButtons()
-    {
-        return DOM.optionsDialog.querySelectorAll("button")
-    }
-    
-    static get loginButton()
-    {
-        return DOM.get("#login")
-    }
-    
-    static get logoutButton()
-    {
-        return DOM.get("#logout")
-    }
-    
-    static get bottomElement()
-    {
-        return DOM.get(".bottom")
-    }
-    
-    static get dataElement()
-    {
-        return DOM.get("#data")
-    }
-    
-    static get searchInput()
-    {
-        return DOM.get("#search")
-    }
-    
-    static get infoElement()
-    {
-        if (!DOM._infoElement)
-            DOM._infoElement = DOM.create("div")
-        return DOM._infoElement
-    }
-    
-    static get previousLdButton()
-    {
-        return DOM.get("#previous-ld-button")
-    }
-    
-    static get nextLdButton()
-    {
-        return DOM.get("#next-ld-button")
-    }
-    
-    static get optionsButton()
-    {
-        return DOM.get("#options-button")
-    }
-    
-    static get checkboxes()
-    {
-        return DOM.getAll(`input[type="checkbox"]`)
-    }
-    
-    static get checkboxContainers()
-    {
-        return DOM.getAll(`.checkbox__container`)
-    }
-    
-    static get orderCategoryCheckboxes()
-    {
-        return DOM.getAll(`input[data-option="orderCategory"]`)
-    }
-    
-    static noScrollEvent = e =>
-    {
-        if (e.target.classList.contains("dialog__background"))
-            e.preventDefault()
-    
-        if (e.target.classList.contains("dialog__box-header"))
-            e.preventDefault()
-    
-        if (e.target.classList.contains("dialog__box-footer"))
-            e.preventDefault()
-    }
-    
-    static disableScroll() 
-    {
-        DOM.body.addEventListener("wheel", DOM.noScrollEvent, { passive: false })
-    }
-    
-    static enableScroll()
-    {
-        DOM.body.removeEventListener("wheel", DOM.noScrollEvent)
-    }
-    
-    static openLoginDialog()
-    {
-        DOM.loginDialog.classList.add("visible")
-        DOM.usernameInput.focus()
-    }
-    
-    static shakeDialogBox()
-    {
-        DOM.timeout(
-            DOM.get(".dialog__box"),
-            x => x.classList.add("shake"),
-            x => x.classList.remove("shake"),
-            500
-        )
-    }
-    
-    static closeLoginDialog()
-    {
-        DOM.loginDialog.classList.remove("visible")
-    }
-    
-    static openGameDialog(title, body)
-    {
-        DOM.disableScroll()
-        DOM.gameDialogHeader.innerHTML = title
-        DOM.gameDialogBody.innerHTML = `<div class="markdown">${body}</div>`
-        DOM.gameDialog.classList.add("visible")
-    }
-    
-    static closeGameDialog()
-    {
-        DOM.enableScroll()
-        DOM.gameDialog.classList.remove("visible")
-    }
-    
-    static openOptionsDialog()
-    {
-        DOM.optionsDialog.classList.add("visible")
-    }
-
-    static closeOptionsDialog()
-    {
-        DOM.optionsDialog.classList.remove("visible")
-    }
-}
-
-class App
+export default class App
 {
     static grades = [
         "Overall",
@@ -357,7 +60,7 @@ class App
         window.addEventListener("scroll", () =>
         {
             if (DOM.moreButton.parentNode)
-                if (DOM.body.offsetHeight - window.innerHeight - window.scrollY < 400)
+                if (document.body.offsetHeight - window.innerHeight - window.scrollY < 400)
                     DOM.moreButton.click()
         })
         
@@ -389,6 +92,9 @@ class App
         DOM.logoutButton.addEventListener("click", () => this.logout())
         DOM.logoutButton.style.display = Storage.token ? "block" : "none"
         
+        DOM.optionsButton.addEventListener("click", DOM.openOptionsDialog)
+        DOM.optionsDialogButtons[0].addEventListener("click", () => DOM.closeOptionsDialog())
+        
         DOM.searchInput.value = await Storage.search
         DOM.searchInput.addEventListener("input", () =>
         {
@@ -410,23 +116,31 @@ class App
         {
             item.addEventListener("click", () =>
             {
-                if (item.parentNode.id != "options-dialog")
-                    item.parentNode.classList.remove("visible")
+                DOM.enableScroll()
+                item.parentNode.classList.remove("visible")
             })
         })
         
         DOM.previousLdButton.addEventListener("click", () => this.previous())
         DOM.nextLdButton.addEventListener("click", () => this.next())
         
-        DOM.optionsButton.addEventListener("click", DOM.openOptionsDialog)
-        DOM.optionsDialogButtons[0].addEventListener("click", () =>
-        {
-            DOM.closeOptionsDialog()
-            this.clearGames()
-            this.fetchGames()
-        })
-        
         const options = await UserSettings.getOptions()
+        
+        if (!Storage.token)
+        {
+            DOM.requiresLogin.forEach(item =>
+            {
+                if (item.classList.contains("but-is-readonly"))
+                {
+                    item.style.pointerEvents = "none"
+                    item.style.opacity = .5
+                }
+                else
+                {
+                    item.style.display = "none"
+                }
+            })
+        }
         
         DOM.checkboxes.forEach(item =>
         {
@@ -468,18 +182,22 @@ class App
                             else
                                 x.checked = false
                         })
+                        
+                        options[option] = ""
+                        
                         DOM.orderCategoryCheckboxes.forEach(x =>
                         {
                             if (x.checked)
                                 options[option] = category
                         })
-                        await UserSettings.setOptions(options)
+                        
+                        await UserSettings.setOptions(this, options)
                     }
                     else
                     {
                         input.checked = !input.checked
                         options[option] = input.checked
-                        await UserSettings.setOptions(options)
+                        await UserSettings.setOptions(this, options)
                     }
                 })
             }
@@ -499,8 +217,8 @@ class App
         
         DOM.bottomElement.appendChild(DOM.loading)
         
-        DOM.previousLdButton.style.display = Storage.ld == MIN_LD_NUMBER ? "none" : "block"
-        DOM.nextLdButton.style.display = Storage.ld == MAX_LD_NUMBER ? "none" : "block"
+        DOM.previousLdButton.style.display = Storage.ld == Const.MIN_LD_NUMBER ? "none" : "block"
+        DOM.nextLdButton.style.display = Storage.ld == Const.MAX_LD_NUMBER ? "none" : "block"
         DOM.getAll(".ld").forEach(x => x.innerHTML = Storage.ld)
         DOM.getAll(".rate-progress").forEach(x => x.innerHTML = "")
         
@@ -760,7 +478,7 @@ class App
         if (this.busy)
             return
         
-        Storage.ld = Math.max(MIN_LD_NUMBER, Storage.ld - 1)
+        Storage.ld = Math.max(Const.MIN_LD_NUMBER, Storage.ld - 1)
         this.clearGames()
         this.fetchGames()
     }
@@ -770,12 +488,8 @@ class App
         if (this.busy)
             return
         
-        Storage.ld = Math.max(MIN_LD_NUMBER, Storage.ld + 1)
+        Storage.ld = Math.max(Const.MIN_LD_NUMBER, Storage.ld + 1)
         this.clearGames()
         this.fetchGames()
     }
 }
-
-const app = new App
-
-app.run()

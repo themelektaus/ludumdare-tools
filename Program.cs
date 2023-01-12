@@ -18,7 +18,11 @@ var builder = WebApplication.CreateBuilder();
 var root = builder.Environment.ContentRootPath;
 var app = builder.Build();
 
+#if DEBUG
+var fileProvider = new PhysicalFileProvider(Path.Combine(root, "frontend", "dist"));
+#else
 var fileProvider = new PhysicalFileProvider(Path.Combine(root, "frontend"));
+#endif
 
 app.UseDefaultFiles(new DefaultFilesOptions
 {
@@ -112,25 +116,31 @@ app.MapPost("/api/ld{number}", async (HttpContext context, int number) =>
         games.FillComments(myComments);
     }
 
-    IEnumerable<LD_Game> result = games;
+    IEnumerable<LD_Game> prefilteredGames = games;
 
     if (!settings.options.filterJam)
-        result = result.Where(x => x.subsubtype != "jam");
+        prefilteredGames = prefilteredGames.Where(x => x.subsubtype != "jam");
 
     if (!settings.options.filterCompo)
-        result = result.Where(x => x.subsubtype != "compo");
+        prefilteredGames = prefilteredGames.Where(x => x.subsubtype != "compo");
 
     if (!settings.options.filterRated)
-        result = result.Where(x => x.rating.GetTotal() == 0);
+        prefilteredGames = prefilteredGames.Where(x => x.rating.GetTotal() == 0);
 
     if (!settings.options.filterUnrated)
-        result = result.Where(x => x.rating.GetTotal() != 0);
+        prefilteredGames = prefilteredGames.Where(x => x.rating.GetTotal() != 0);
+
+    List<LD_Game> potentialGames;
 
     var search = context.GetFormString("search");
 
-    if (!string.IsNullOrWhiteSpace(search))
+    if (string.IsNullOrWhiteSpace(search))
     {
-        result = result.Where(x =>
+        potentialGames = prefilteredGames.ToList();
+    }
+    else
+    {
+        void Prioritize(GameInfo gameInfo)
         {
             var groups = search
                 .Split('|')
@@ -148,26 +158,54 @@ app.MapPost("/api/ld{number}", async (HttpContext context, int number) =>
 
                 foreach (var part in parts)
                 {
+                    if (gameInfo.game.static_path == part)
+                    {
+                        gameInfo.priority = 3;
+                        return;
+                    }
+
+                    if ((gameInfo.game.user?.name ?? "").Has(part))
+                    {
+                        gameInfo.priority = 2;
+                        return;
+                    }
+
                     if (
-                        x.name.Has(part) ||
-                        (x.user?.name ?? "").Has(part) ||
-                        x.body.Has(part)
+                        gameInfo.game.name.Has(part) ||
+                        gameInfo.game.body.Has(part)
                     )
                     {
                         if (!and)
-                            return true;
+                        {
+                            gameInfo.priority = 1;
+                            return;
+                        }
                     }
                     else if (and)
+                    {
                         goto Next;
+                    }
                 }
 
-                return and;
+                return;
             Next:;
             }
+        }
 
-            return false;
-        });
+        var gameInfos = new List<GameInfo>();
+        foreach (var gameInfo in prefilteredGames.Select(x => new GameInfo { game = x }))
+        {
+            Prioritize(gameInfo);
+            if (gameInfo.priority == 0)
+                continue;
+
+            gameInfos.Add(gameInfo);
+        }
+
+        potentialGames = gameInfos.OrderByDescending(x => x.priority).Select(x => x.game).ToList();
     }
+
+    IEnumerable<LD_Game> result = potentialGames;
 
     if (settings.options.filterOnlyFavorites)
         result = result.Where(x => settings.favoriteGameIds.Contains(x.id));
