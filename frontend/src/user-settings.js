@@ -32,6 +32,7 @@ export default class UserSettings
             promise = App.post(
                 `/api/options/set`, {
                     token: Storage.token,
+                    preferGifs: value.preferGifs,
                     filterOnlyFavorites: value.filterOnlyFavorites,
                     filterJam: value.filterJam,
                     filterCompo: value.filterCompo,

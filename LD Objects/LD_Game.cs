@@ -52,13 +52,31 @@ public class LD_Game : LD_Node
     public int userComments;
 
     [JsonIgnore]
-    public string static_cover =>
-        cover is null
-        ? null
-        : cover.Replace("///content", "https://static.jam.vg/content") + ".jpg" ?? "";
+    public string static_cover
+    {
+        get
+        {
+            if (cover is null)
+                return null;
+
+            return cover.Replace("///content", "https://static.jam.vg/content") + ".jpg";
+        }
+    }
 
     [JsonIgnore]
     public string thumbnail_url => $"/api/thumbnail/{id}";
+
+    [JsonIgnore]
+    public string gif_url
+    {
+        get
+        {
+            if (static_gifs.Count > 0)
+                return $"/api/images/{id}/gif";
+
+            return thumbnail_url;
+        }
+    }
 
     public override void BeforeSave(dynamic data)
     {

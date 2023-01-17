@@ -107,6 +107,16 @@ public static class ExtensionMethods
         await Cache.users.Fetch(games.Select(x => x.author).Distinct());
     }
 
+    public static async Task FetchComments(this Runtime @this, LD_Event @event)
+    {
+        var games = await @event.GetGames();
+        foreach (var game in games)
+        {
+            // TODO: Fetch comments
+            _ = $"https://api.ldjam.com/vx/comment/getbynode/{game.id}";
+        }
+    }
+
     public static async Task<LD_User> GetUser(this HttpContext @this)
     {
         using var httpClient = @this.CreateHttpClient();

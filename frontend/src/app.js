@@ -274,12 +274,12 @@ export default class App
 
             if (games.length % 2 != 0)
                 games.push({})
-            
+                
             for (const i in games)
             {
                 const game = games[i]
                 const link = game.static_path || ""
-                const thumbnail = game.thumbnail_url || ""
+                const thumbnail = (DOM.preferGifs.checked ? game.gif_url : game.thumbnail_url) || ""
                 
                 let title = game.name || "Untitled"
                 if (title.length > 50)

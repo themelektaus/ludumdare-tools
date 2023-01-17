@@ -4,11 +4,14 @@ using LudumDareTools;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.FileProviders;
 
 using System.Net;
+using System.Text;
 
 using CultureInfo = System.Globalization.CultureInfo;
+using MD5 = System.Security.Cryptography.MD5;
 
 #endregion
 
@@ -323,6 +326,7 @@ app.MapPost("/api/options/set", async (HttpContext context) =>
     return await context.ModifySettings(settings =>
     {
         var o = settings.options;
+        o.preferGifs = context.GetFormBoolean("preferGifs");
         o.filterOnlyFavorites = context.GetFormBoolean("filterOnlyFavorites");
         o.filterJam = context.GetFormBoolean("filterJam");
         o.filterCompo = context.GetFormBoolean("filterCompo");
@@ -372,8 +376,7 @@ app.MapGet("/api/thumbnail/{gameId}", async (HttpContext context, int gameId) =>
         if (game?.static_cover is not null)
         {
             using var httpClient = context.CreateHttpClient();
-            var response = await httpClient.GetAsync(game.static_cover);
-
+            using var response = await httpClient.GetAsync(game.static_cover);
             using var stream = response.Content.ReadAsStream();
             using var bitmap = Utils.CreateBitmap(stream, new()
             {
@@ -382,7 +385,7 @@ app.MapGet("/api/thumbnail/{gameId}", async (HttpContext context, int gameId) =>
                 crop = true
             });
             using var data = bitmap.Encode(SkiaSharp.SKEncodedImageFormat.Jpeg, 90);
-            File.WriteAllBytes(file.FullName, data.ToArray());
+            await File.WriteAllBytesAsync(file.FullName, data.ToArray());
             file.Refresh();
         }
     }
@@ -391,6 +394,68 @@ app.MapGet("/api/thumbnail/{gameId}", async (HttpContext context, int gameId) =>
         return Results.NoContent();
 
     return Results.File(file.FullName, "image/jpeg");
+});
+
+#endregion
+
+#region GET /api/images/{gameId}
+
+app.MapGet("/api/images/{gameId}", async (HttpContext context, int gameId) =>
+{
+    var result = new List<string>();
+    var url = context.Request.GetDisplayUrl().TrimEnd('/');
+    var game = await Cache.games.Get(gameId);
+    for (int index = 0; index < game.static_images.Count; index++)
+        result.Add($"{url}/{index}");
+    return result;
+});
+
+#endregion
+
+#region GET /api/images/{gameId}/{i}
+
+app.MapGet("/api/images/{gameId}/{i}", async (HttpContext context, int gameId, string i) =>
+{
+    var game = await Cache.games.Get(gameId);
+    var images = game.static_images;
+
+    int index;
+
+    if (i == "gif")
+        index = images.FindIndex(x => x.EndsWith(".gif"));
+    else if (!int.TryParse(i, out index))
+        index = -1;
+
+    if (index < 0)
+        return Results.NoContent();
+
+    if (index >= images.Count)
+        return Results.NoContent();
+
+    var path = Path.Combine("data", "images");
+    Directory.CreateDirectory(path);
+
+    using var md5 = MD5.Create();
+    var image = game.static_images[index];
+
+    var name = Path.GetFileNameWithoutExtension(image);
+    var hash = Convert.ToHexString(md5.ComputeHash(Encoding.UTF8.GetBytes(name))).ToLower();
+    var extension = Path.GetExtension(image);
+
+    var file = new FileInfo(Path.Combine(path, $"{gameId}-{hash}.{extension}"));
+    if (!file.Exists)
+    {
+        using var httpClient = context.CreateHttpClient();
+        using var response = await httpClient.GetAsync(image);
+        var data = await response.Content.ReadAsByteArrayAsync();
+        await File.WriteAllBytesAsync(file.FullName, data);
+        file.Refresh();
+    }
+
+    if (!file.Exists)
+        return Results.NoContent();
+
+    return Results.File(file.FullName, $"image/{extension}");
 });
 
 #endregion

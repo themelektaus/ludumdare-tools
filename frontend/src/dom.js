@@ -171,6 +171,11 @@ export default class DOM
         return DOM.getAll(`input[data-option="orderCategory"]`)
     }
     
+    static get preferGifs()
+    {
+        return DOM.get(`input[data-option="preferGifs"]`)
+    }
+    
     static disableScroll() 
     {
         document.body.classList.add("no-scroll")

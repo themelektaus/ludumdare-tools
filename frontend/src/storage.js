@@ -40,6 +40,7 @@ export default class Storage
     static get options()
     {
         const json = localStorage.getItem("options") || JSON.stringify({
+            preferGifs: false,
             filterJam: true,
             filterCompo: true,
             filterRated: true,

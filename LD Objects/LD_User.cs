@@ -6,6 +6,7 @@ public class LD_User : LD_Node
     {
         public class Options
         {
+            public bool preferGifs = false;
             public bool filterOnlyFavorites = false;
             public bool filterJam = true;
             public bool filterCompo = true;

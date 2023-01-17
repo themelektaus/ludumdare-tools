@@ -1,4 +1,6 @@
-﻿namespace LudumDareTools;
+﻿using System.Text.RegularExpressions;
+
+namespace LudumDareTools;
 
 public abstract class LD_Node : LD_Object
 {
@@ -22,4 +24,13 @@ public abstract class LD_Node : LD_Object
 
     [JsonIgnore]
     public string static_body_html => Markdig.Markdown.ToHtml(static_body);
+
+    [JsonIgnore]
+    public List<string> static_images => Regex.Matches(
+        static_body,
+        @"\((https:\/\/.*?\.(png|jpg|jpeg|gif))\)"
+    ).Select(x => x.Groups[1].Value).ToList();
+
+    [JsonIgnore]
+    public List<string> static_gifs => static_images.Where(x => x.EndsWith(".gif")).ToList();
 }
